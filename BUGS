@@ -1,0 +1,2 @@
+- Executing !batalla whithout arguments makes program crash.
+- A user can type !batalla xxx and other can type !1 and replace the true vote.
