@@ -19,19 +19,10 @@ from twisted.python import log
 from twisted.words.protocols.jabber.jid import JID
 from wokkel.client import XMPPClient
 from wokkel.muc import MUCClient
+from Bot import Bot
 
-# Configuration parameters
 
-THIS_JID = JID('iria@iria.me')
-ROOM_JID = JID('lareira@parola.iria.me')
-NICK = u'iria'
-SECRET = 'h0rre0'
-LOG_TRAFFIC = True
-
-with open('SECRET', 'r') as f:
-  SECRET = f.readline().strip()
-
-class MUCGreeter(MUCClient):
+class MUCBot(MUCClient):
     """
     I join a room and respond to greetings.
     """
@@ -40,55 +31,56 @@ class MUCGreeter(MUCClient):
         MUCClient.__init__(self)
         self.roomJID = roomJID
         self.nick = nick
-
+        self._bot = Bot(roomJID, nick, self.groupChat)
 
     def connectionInitialized(self):
         """
         Once authorized, join the room.
-
+        
         If the join action causes a new room to be created, the room will be
         locked until configured. Here we will just accept the default
         configuration by submitting an empty form using L{configure}, which
         usually results in a public non-persistent room.
-
+        
         Alternatively, you would use L{getConfiguration} to retrieve the
         configuration form, and then submit the filled in form with the
         required settings using L{configure}, possibly after presenting it to
         an end-user.
         """
+        
         def joinedRoom(room):
             if room.locked:
                 # Just accept the default configuration. 
                 return self.configure(room.roomJID, {})
-
+        
         MUCClient.connectionInitialized(self)
-
+        
         d = self.join(self.roomJID, self.nick)
         d.addCallback(joinedRoom)
         d.addCallback(lambda _: log.msg("Joined room"))
         d.addErrback(log.err, "Join failed")
 
-
     def receivedGroupChat(self, room, user, message):
-        """
-        Called when a groupchat message was received.
+        # otherwise nasty things could happen...
+        if user.nick != self.nick:
+            self._bot.listen(user.nick, message.body)
 
-        Check if the message was addressed to my nick and if it said
-        C{'hello'}. Respond by sending a message to the room addressed to
-        the sender.
-        """
-        if message.body.startswith(self.nick + u":"):
-            nick, text = message.body.split(':', 1)
-            text = text.strip().lower()
-            if text == u'hello':
-                body = u"%s: Hi!" % (user.nick)
-                self.groupChat(self.roomJID, body)
+#
+# Configuration parameters
+#
 
+THIS_JID = JID('iria@iria.me')
+ROOM_JID = JID('lareira@parola.iria.me')
+NICK = u'iria'
+LOG_TRAFFIC = True
+
+with open('SECRET', 'r') as f:
+    SECRET = f.readline().strip()
 
 # Set up the Twisted application
 application = service.Application("MUC Client")
 client = XMPPClient(THIS_JID, SECRET)
 client.logTraffic = LOG_TRAFFIC
 client.setServiceParent(application)
-mucHandler = MUCGreeter(ROOM_JID, NICK)
+mucHandler = MUCBot(ROOM_JID, NICK)
 mucHandler.setHandlerParent(client)
