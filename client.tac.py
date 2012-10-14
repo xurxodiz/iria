@@ -61,9 +61,10 @@ class MUCBot(MUCClient):
         d.addErrback(log.err, "Join failed")
 
     def receivedGroupChat(self, room, user, message):
-        # otherwise nasty things could happen...
-        if user.nick != self.nick:
-            self._bot.listen(user.nick, message.body)
+        # uncomment this to prevent nasty things
+        # it's a global loop failsafe
+        # if user.nick != self.nick:
+        self._bot.listen(user.nick, message.body)
 
 #
 # Configuration parameters

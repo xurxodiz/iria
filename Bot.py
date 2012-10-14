@@ -6,7 +6,8 @@
 # Version: sqrt(-1) (Still imaginary sketching phase)
 
 import thread
-from Dice import Dice
+from modules.Dice import Dice
+from modules.Spark import Spark
 
 class Bot(object):
     def __init__(self, room, nick, client):
@@ -24,5 +25,6 @@ class Bot(object):
     
     def _loadModules(self):
         self._modules = [
-            Dice(self)
+            Dice(self),
+            Spark(self)
         ]
