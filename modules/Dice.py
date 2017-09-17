@@ -1,24 +1,33 @@
-#!/usr/bin/env python
-#coding=utf-8
-
+from random import randint, seed
 import re
-from random import randint
 
-class Dice:
-    
-    def __init__(self, bot):
-        self._bot = bot
+from telegram.ext import CommandHandler
 
 
-    def listen(self, nick, msg):  
-        if not msg.startswith("roll "):
-            return
-        msg = msg[5:] 
-             
+class DiceHandler:
+
+    _command_handles = ["d", "dados"]
+
+    def __init__(self):
+        seed()
+        self.regex = re.compile("([-+])?(?:(\d+)(d)?(\d+)?)", re.IGNORECASE)
+        self.last = ""
+
+
+    def register(self, dp):
+        for ch in self._command_handles:
+            dp.add_handler(CommandHandler(ch, self.handle, pass_args=True))
+
+
+    def handle(self, bot, update, args):
         result = 0
-        regex = re.compile("([-+])?(?:(\d+)(d)?(\d+)?)", re.IGNORECASE)
-        
-        for match in regex.finditer(msg):
+        if len(args) == 0:
+            msg = self.last # a reroll has been asked
+        else:
+            msg = args[0]
+            self.last = msg # keep it for rerolls
+
+        for match in self.regex.finditer(msg):
             if match.group(1) == "-":
                 factor = -1
             else:
@@ -29,11 +38,8 @@ class Dice:
                 value = int(match.group(2))
             result += factor * value
 
-        self._bot.talk(str(result))
+        update.message.reply_text(str(result))
 
 
-    def roll(self, num, sides):
-        if (sides == 0): return 0
-        n = 0;
-        for die in range(num): n += randint(1,sides)
-        return n
+    def roll(self, num_die, sides):
+        return sum([randint(1, sides) for _ in range(num_die)])
