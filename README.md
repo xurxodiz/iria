@@ -4,7 +4,7 @@ A chatbot for Telegram.
 Where to test it?
 =================
 
-You can add Iria on Telegram at `@iria_bot`.
+You can add Iria on Telegram at [`@iria_bot`](http://t.me/iria_bot).
 
 
 What can it do?
@@ -12,8 +12,8 @@ What can it do?
 
 It currently supports three commands:
 
-* `/a tag` posts a random APM gif taken from http//gifsapm.tumblr.com and based on the tag passed.
-* `/e word` searches for that word in the Estraviz dictionary at http://estraviz.org
+* `/a tag` posts a random APM gif taken from the [APM Gifs tumblr](http://gifsapm.tumblr.com) based on the tag passed.
+* `/e word` searches for that word in the [Estraviz dictionary](http://estraviz.org)
 * `/d sequence` rolls dice. `sequence` takes the usual RPG pattern, i.e. `3d6+1d10+7`
 
 
