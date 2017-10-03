@@ -15,13 +15,15 @@ class GifsApmHandler:
         self._tclient = pytumblr.TumblrRestClient(c_key, c_secret, a_token, a_secret)
 
 
-    def register(self, dp):
+    def register(self, dp, logger):
         for ch in self._command_handles:
             dp.add_handler(CommandHandler(ch, self.handle, pass_args=True))
+        self.logger = logger
 
 
     def handle(self, bot, update, args):
         try:
+            self.logger.info("[GA] A procurar gifs para: " + args[0])
             tagged_posts = self._tclient.posts('gifsapm', tag=args[0])
             gifs = self._extract_gifs_from_tumblr(tagged_posts)
         except:
@@ -30,6 +32,7 @@ class GifsApmHandler:
         # in any case, if no gif found
         if gifs == []:
             # old man cringing
+            self.logger.info("[GA] Nom hai gifs para: " + args[0])
             gifs = ['http://i765.photobucket.com/albums/xx299/Daft_Punk64/APM_.gif']
         update.message.reply_document(random.choice(gifs))
 

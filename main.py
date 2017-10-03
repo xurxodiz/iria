@@ -16,8 +16,9 @@ from modules.dice import DiceHandler
 # LOGGING
 ########################
 
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                    level=logging.INFO)
+logging.basicConfig(format='[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s',
+                    level=logging.INFO,
+                    filename='iria.log')
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +47,28 @@ def echo(bot, update):
 
 def error(bot, update, error):
     logger.warn('Mensagem "%s" causou erro "%s"' % (update, error))
+    try:
+        raise error
+    except Unauthorized:
+        # remove update.message.chat_id from conversation list
+        logger.warn('Unauthorized: %s' % update.message.chat_id)
+    except BadRequest:
+        logger.warn('Bad Request')
+        # handle malformed requests - read more below!
+    except TimedOut:
+        logger.warn('Timed Out')
+        # handle slow connection problems
+    except NetworkError:
+        logger.warn('Network Error')
+        # handle other connection problems
+    except ChatMigrated as e:
+        # the chat_id of a group has changed, use e.new_chat_id instead
+        logger.warn('Chat Migrated: %s' % error.new_chat_id)
+    except TelegramError:
+        # handle all other telegram related errors
+        logger.warn('Other Telegram Error')
+
+    
 
 
 ########################
@@ -72,9 +95,9 @@ dp.add_error_handler(error) # log all errors
 # custom modules are defined here
 #################################
 
-EstravizHandler().register(dp)
-GifsApmHandler().register(dp)
-DiceHandler().register(dp)
+EstravizHandler().register(dp, logger)
+GifsApmHandler().register(dp, logger)
+DiceHandler().register(dp, logger)
 
 
 # Start the Bot

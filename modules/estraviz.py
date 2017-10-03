@@ -13,19 +13,22 @@ class EstravizHandler:
         pass
 
 
-    def register(self, dp):
+    def register(self, dp, logger):
         for ch in self._command_handles:
             dp.add_handler(CommandHandler(ch, self.handle, pass_args=True))
+        self.logger = logger
     
 
     def handle(self, bot, update, args):
         if len(args) > 0:
+            self.logger.info("[EZ] A procurar no Estraviz: " + args[0])
             with urlopen('http://estraviz.org/' + quote(args[0])) as f:
                 doc = html.parse(f)
             entry = doc.find(".//div[@id='resultado']/ol")
             if entry is not None:
                 msg = "".join([t for t in self._traverse(entry)])
             else:
+                self.logger.info("[EZ] Nom se atopou")
                 msg = "Nom atopei rem"
             update.message.reply_text(msg, parse_mode="Markdown")
         else:
