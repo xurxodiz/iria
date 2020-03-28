@@ -1,12 +1,6 @@
 A chatbot for Telegram.
 
 
-Where to test it?
-=================
-
-You can add Iria on Telegram at [`@iria_bot`](http://t.me/iria_bot).
-
-
 What can it do?
 ===============
 
@@ -20,27 +14,53 @@ Check the license in the link.
 
 It also has two Easter Eggs commands:
 
-* `/g tag` or `/gifsapm tag` posts a random APM gif taken from the [APM Gifs tumblr](http://gifsapm.tumblr.com)
+* `/g tag` or `/gifsapm tag` posts a random APM gif taken
+from the [APM Gifs tumblr](http://gifsapm.tumblr.com)
 based on the tag passed.
-* `/e word` or `/estraviz word` searches for that word in the [Estraviz dictionary](http://estraviz.org).
+* `/e word` or `/estraviz word` searches for that word
+in the [Estraviz dictionary](http://estraviz.org).
 
 
-Deploy notes
-============
+Where to test it?
+=================
+
+You can add Iria on Telegram at [`@iria_bot`](http://t.me/iria_bot).
+
+Though, as it should be understood, I take no responsability
+for interruptions of service or loss of data due to testing,
+feature upgrades, sysadmin troubles or basically any reason!
+
+If you want stability, deploy your own version 😊
+
+
+How to deploy?
+==============
+
+1. Clone the repo in a machine that has Docker.
+2. Register with [the BotFather](https://core.telegram.org/bots)
+so you get your own token. Place it into `data/secret/bot_token`.
+3. Run `docker-compose up -d` et voilà!
 
 Iria is MIT licensed, so you can do pretty much whatever you want as long
 as you include the original copyright and license notice in any copy of the code.
+Experiment, have fun, and drop me a notice if you make something cool based on her.
 
-If you want to deploy your own, you'll need a `secret/bot_token` file with the Telegram token
-and possibly a `secret/tumblr_token` with the Tumblr tokens
-for consumer key, consumer secret, access token and access secret in consecutive, different lines.
+Note that for the APM gifs easter egg to work,
+you need a `data/secret/tumblr_token` containing the Tumblr tokens for
+- consumer key
+- consumer secret
+- access token
+- access secret
+
+in consecutive, different lines. (In its absence the plugin is just not loaded).
+
 
 
 Why the name?
 =============
 
 Way, way back it used to be an IRC bot (see that messy first commit).
-So Iria stood for `IRC Intelixencia Artificial`, as well as being a nice Galician name.
+So IRIA stood for `IRC Intelixencia Artificial`, as well as being a nice Galician name.
 I then ported it to Jabber, before finally porting it to Telegram, but kept the name as I liked it.
 
 It could now be backronymed into `"It's not my fault, Really!" IA`.
