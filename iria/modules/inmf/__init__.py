@@ -1,0 +1,1 @@
+from .inmf import register
