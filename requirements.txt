@@ -4,7 +4,7 @@ chardet==3.0.4
 cryptography==2.8
 decorator==4.4.2
 future==0.18.2
-httplib2==0.17.0
+httplib2==0.18.0
 httpretty==1.0.2
 idna==2.9
 lxml==4.5.0
