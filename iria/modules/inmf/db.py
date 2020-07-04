@@ -1,292 +1,155 @@
-import logging
-import os
-import sqlite3
+import json
 from enum import Enum
 
+from modules.rpgdb import *
 
-logger = logging.getLogger(__package__)
-
-
-class Role(Enum):
-    MASTER = "master"
-    PLAYER = "player"
-
-
-class Player:
-    def __init__(self, chat_id, user_id, role, user_name):
-        self.chat_id = chat_id
-        self.user_id = user_id
-        self.role = role
-        # we save the names so we can print them back for game info &c
-        self.user_name = user_name
+class SituationType(Enum):
+    WHERE_NOW = 0
+    WHAT_BROUGHT = 1
+    HOW_WORSE = 2
 
 
-class Content:
-    def __init__(self, chat_id, user_id, container, key, value):
-        self.chat_id = chat_id
-        self.user_id = user_id
-        self.container = container
-        self.key = key
-        self.value = value
+def init(conn):
+    c = conn.conn.cursor()
+    c.execute('''CREATE TABLE IF NOT EXISTS Facets
+                 (facet_id INTEGER PRIMARY KEY,
+                  expansion INTEGER,
+                  code TEXT,
+                  name TEXT,
+                  careful INTEGER,
+                  clever INTEGER,
+                  flashy INTEGER,
+                  forceful INTEGER,
+                  quick INTEGER,
+                  sneaky INTEGER,
+                  stunt_name TEXT,
+                  stunt_description TEXT,
+                  quote TEXT)''')
 
+    c.execute('''CREATE TABLE IF NOT EXISTS CharacterFacets
+                 (character_id INTEGER,
+                  facet_id INTEGER,
+                  PRIMARY KEY (character_id, facet_id),
+                  FOREIGN KEY (character_id) REFERENCES Characters(character_id),
+                  FOREIGN KEY (facet_id) REFERENCES Facets(facet_id)''')
 
-class GameNotRunningError(BaseException):
-    pass
+    c.execute('''CREATE TABLE IF NOT EXISTS Situations
+                 (situation_id INTEGER PRIMARY KEY,
+                  expansion INTEGER,
+                  type INTEGER,
+                  draw INTEGER,
+                  description TEXT)''')
 
+    c.execute('''CREATE TABLE IF NOT EXISTS GameSituations
+                 (game_id INTEGER,
+                  situation_id INTEGER,
+                  PRIMARY KEY (game_id, situation_id),
+                  FOREIGN KEY (game_id) REFERENCES Games(game_id),
+                  FOREIGN KEY (situation_id) REFERENCES Situations(situation_id)''')
 
-class GameRunningError(BaseException):
-    pass
+    json_path = os.path.join(os.getenv("DATA_DIR"), "inmf", "facets.json")
 
+    with open(json_path) as json_file:
+        json_data = json.load(json_file)
+        for facet in json_data:
+            c.execute('''INSERT OR REPLACE INTO Facets(
+                          expansion,
+                          code,
+                          name,
+                          careful,
+                          clever,
+                          flashy,
+                          forceful,
+                          quick,
+                          sneaky,
+                          stunt_name,
+                          stunt_description,
+                          quote
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                      (
+                          facet['expansion'],
+                          facet['code'],
+                          facet['name'],
+                          facet['careful'],
+                          facet['clever'],
+                          facet['flashy'],
+                          facet['forceful'],
+                          facet['quick'],
+                          facet['sneaky'],
+                          facet['stunt_name'],
+                          facet['stunt_description'],
+                          facet['quote']
+                      ))
 
-class PlayerNotInGameError(BaseException):
-    pass
+    json_path = os.path.join(os.getenv("DATA_DIR"), "inmf", "situations.json")
 
+    with open(json_path) as json_file:
+        json_data = json.load(json_file)
+        for situation in json_data:
+            c.execute('''INSERT OR REPLACE INTO Situations(
+                          expansion,
+                          type,
+                          draw,
+                          description
+                        ) VALUES (?, ?, ?, ?)''',
+                      (
+                          situation['expansion'],
+                          situation['type'],
+                          situation['draw'],
+                          situation['description'],
+                      ))
+    c.commit()
 
-class Singleton(type):
-    _instances = {}
+def get_random_facet():
+    c = Conn().conn.cursor()
+    query = c.execute('''SELECT *
+                         FROM Facets
+                         ORDER BY RANDOM()
+                         LIMIT 1''')
+    return query.fetchone()
 
-    def __call__(cls, *args, **kwargs):
-        if cls not in cls._instances:
-            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
-        return cls._instances[cls]
+def get_random_situation(type):
+    c = Conn().conn.cursor()
+    query = c.execute('''SELECT *
+                         FROM Situations
+                         WHERE type = ?
+                         ORDER BY RANDOM()
+                         LIMIT 1''',
+                      (type,))
+    return query.fetchone()
 
+def get_random_situation_exclude(type, ids_not):
+    c = Conn().conn.cursor()
+    query = c.execute('''SELECT *
+                         FROM Situations
+                         WHERE type = ?
+                         AND situation_id IS NOT IN ?
+                         ORDER BY RANDOM()
+                         LIMIT 1''',
+                      (type, ids_not,))
+    return query.fetchone()
 
-class DB(metaclass=Singleton):
+def do_assign_situation(game_id, situation_id):
+    c = Conn().conn.cursor()
+    c.execute('''INSERT OR REPLACE INTO GameSituations(
+                  game_id, situation_id
+                ) VALUES (?, ?)''',
+              (game_id, situation_id,))
+    c.commit()
 
-    _conn = None
+def do_game_start(game_id):
+    where_now = get_random_situation(SituationType.WHERE_NOW)
+    do_assign_situation(game_id, where_now['situation_id'])
 
-    def __init__(self):
-        db_path = os.path.join(os.getenv("DATA_DIR"), "inmf", "games.db")
-        self._conn = sqlite3.connect(db_path)
+    what_brought = get_random_situation(SituationType.WHAT_BROUGHT)
+    do_assign_situation(game_id, what_brought['situation_id'])
 
-        try:
-            logger.info('Initializing database...')
-            c = self._conn.cursor()
-
-            c.execute('''CREATE TABLE IF NOT EXISTS Players
-                         (chat_id INTEGER,
-                          user_id INTEGER,
-                          role INTEGER,
-                          user_name TEXT,
-                          PRIMARY KEY(chat_id, user_id))''')
-
-            c.execute('''CREATE TABLE IF NOT EXISTS Contents
-                         (chat_id INTEGER,
-                          user_id INTEGER,
-                          container TEXT,
-                          key TEXT,
-                          desc TEXT,
-                          value INTEGER,
-                          PRIMARY KEY (chat_id, user_id, container, key))''')
-            self._conn.commit()
-
-        except Exception as e:
-            logger.error('Failed to initialize database: ' + repr(e))
-            raise e
-
-    def __del__(self):
-        self._conn.close()
-
-    def do_game_start(self, chat_id, admin_id, admin_name):
-        if self.is_game_running(chat_id):
-            raise GameRunningError
-
-        self.do_player_add(chat_id, admin_id, Role.MASTER.value, admin_name)
-
-    def do_game_end(self, chat_id):
-        c = self._conn.cursor()
-        c.execute('''DELETE FROM Players
-                     WHERE chat_id = ?''',
-                  (chat_id,))
-        c.execute('''DELETE FROM Contents
-                     WHERE chat_id = ?''',
-                  (chat_id,))
-        self._conn.commit()
-
-    def is_game_running(self, chat_id):
-        c = self._conn.cursor()
-        query = c.execute('''SELECT 1
-                             FROM Players
-                             WHERE chat_id = ?''',
-                          (chat_id,))
-        result = query.fetchone()
-        return result is not None
-
-    def get_game_players(self, chat_id):
-        if not self.is_game_running(chat_id):
-            raise GameNotRunningError
-
-        c = self._conn.cursor()
-        query = c.execute('''SELECT chat_id, user_id, role, user_name
-                             FROM Players
-                             WHERE chat_id = ?''',
-                          (chat_id,))
-        return [Player(*player) for player in query.fetchall()]
-
-    def do_player_add(self, chat_id, user_id, role, user_name):
-        c = self._conn.cursor()
-        c.execute('''INSERT OR REPLACE INTO Players(chat_id, user_id, role, user_name)
-                     VALUES (?, ?, ?, ?)''',
-                  (chat_id, user_id, role, user_name,))
-        self._conn.commit()
-
-    def get_player_role(self, chat_id, user_id):
-        if not self.is_game_running(chat_id):
-            raise GameNotRunningError
-
-        c = self._conn.cursor()
-        query = c.execute('''SELECT role
-                             FROM Players
-                             WHERE chat_id = ?
-                             AND user_id = ?''',
-                          (chat_id, user_id,))
-        result = query.fetchone()
-        if result is None:
-            raise PlayerNotInGameError
-        return result[0]
-
-    def get_player_name(self, chat_id, user_id):
-        if not self.is_game_running(chat_id):
-            raise GameNotRunningError
-
-        c = self._conn.cursor()
-        query = c.execute('''SELECT user_name
-                             FROM Players
-                             WHERE chat_id = ?
-                             AND user_id = ?''',
-                          (chat_id, user_id,))
-        result = query.fetchone()
-        if result is None:
-            raise PlayerNotInGameError
-        return result[0]
-
-    def is_game_master(self, chat_id, user_id):
-        return self.get_player_role(chat_id, user_id) == Role.MASTER.value
-
-
-
-    def add_default_items(self, user_id, chat_id):
-        self.update_item(chat_id, user_id, 'general', 'description', 'Describe your character in a few words.', False)
-        self.update_item(chat_id, user_id, 'general', 'fatepoints', '3', False)
-        self.update_item(chat_id, user_id, 'general', 'refresh', '3', False)
-        self.update_item(chat_id, user_id, 'general', 'stress2', 'Inactive', False)
-        self.update_item(chat_id, user_id, 'general', 'stress4', 'Inactive', False)
-        self.update_item(chat_id, user_id, 'general', 'stress6', 'Inactive', False)
-        self.update_item(chat_id, user_id, 'stunts', '1', 'Set this to your first stunt.', False)
-        self.update_item(chat_id, user_id, 'aspects', 'highconcept', 'Set this to your high concept.', False)
-        self.update_item(chat_id, user_id, 'aspects', 'trouble', 'Your character\'s trouble.', False)
-        self.update_item(chat_id, user_id, 'aspects', '1', 'Set this to your first aspect.', False)
-        self.update_item(chat_id, user_id, 'approaches', 'careful', '0', False)
-        self.update_item(chat_id, user_id, 'approaches', 'clever', '0', False)
-        self.update_item(chat_id, user_id, 'approaches', 'flashy', '0', False)
-        self.update_item(chat_id, user_id, 'approaches', 'forceful', '0', False)
-        self.update_item(chat_id, user_id, 'approaches', 'quick', '0', False)
-        self.update_item(chat_id, user_id, 'approaches', 'sneaky', '0', False)
-
-
-    def update_item(self, chat_id, user_id, container, key, change, replace_only):
-
-        c = self._conn.cursor()
-        query = c.execute('''SELECT value
-                             FROM Contents
-                             WHERE chat_id=?
-                             AND user_id=?
-                             AND container=?
-                             AND key=?''',
-                          (chat_id, user_id, container, key,))
-        result = query.fetchone()
-        if result is None:
-            oldvalue = None
-            if replace_only:
-                return oldvalue, None
-        else:
-            oldvalue = result[0]
-
-        if (oldvalue is None or oldvalue.isdigit()) \
-                and (change.isdigit() or (change[0] in ['+', '-'] and change[1:].isdigit())):
-            if oldvalue is None:
-                oldvalue = 0
-            else:
-                oldvalue = int(oldvalue)
-            if change[0] == '+':
-                newvalue = oldvalue + int(change[1:])
-            elif change[0] == '-':
-                newvalue = oldvalue - int(change[1:])
-            else:
-                newvalue = int(change)
-        else:
-            newvalue = change
-
-        c.execute('''INSERT OR REPLACE INTO Contents(chat_id, user_id, container, key, value)
-                     VALUES (?, ?, ?, ?, ?)''',
-                  (chat_id, user_id, container, key, newvalue,))
-        self._conn.commit()
-        return oldvalue, newvalue
-
-    def add_to_list(self, chat_id, user_id, container, description):
-        """
-        description: the new item description
-        """
-        c = self._conn.cursor()
-        query = c.execute('''SELECT MAX(key)
-                             FROM Contents
-                             WHERE chat_id=?
-                             AND user_id=?
-                             AND container=?''',
-                          (chat_id, user_id, container,))
-        new = query.fetchone()[0] + 1
-        c.execute('''INSERT OR REPLACE INTO Contents(chat_id, user_id, container, key, value)
-                     VALUES (?, ?, ?, ?, ?)''',
-                  (chat_id, user_id, container, new, description,))
-        self._conn.commit()
-
-    def get_item_value(self, chat_id, user_id, container, key):
-        c = self._conn.cursor()
-        query = c.execute('''SELECT value
-                             FROM Contents
-                             WHERE chat_id=?
-                             AND user_id=?
-                             AND container=?
-                             AND key=?''',
-                          (chat_id, user_id, container, key,))
-        result = query.fetchone()
-        if result is None:
-            return None
-        return result[0]
-
-    def delete_item(self, chat_id, user_id, container, key):
-        c = self._conn.cursor()
-        query = c.execute('''SELECT value
-                             FROM Contents
-                             WHERE chat_id=?
-                             AND user_id=?
-                             AND container=?
-                             AND key=?''',
-                          (chat_id, user_id, container, key,))
-        result = query.fetchone()
-        if result is None:
-            return None
-        oldvalue = result[0]
-        c.execute('''DELETE
-                     FROM Contents
-                     WHERE chat_id=?
-                     AND user_id=?
-                     AND container=?
-                     AND key=?''',
-                  (chat_id, user_id, container, key,))
-        self._conn.commit()
-        return oldvalue
-
-    def get_items(self, chat_id, user_id):
-        c = self._conn.cursor()
-        contents = {}
-        query = c.execute('''SELECT container, key, value
-                             FROM Contents
-                             WHERE chat_id=?
-                             AND user_id=?''',
-                          (chat_id, user_id,))
-        for row in query.fetchall():
-            if row[0] not in contents:
-                contents[row[0]] = {}
-            contents[row[0]][row[1]] = row[2]
-        return contents
+    how_worse = get_random_situation(SituationType.HOW_WORSE)
+    if how_worse['draw'] == 1:
+        how_worse2 = get_random_situation_exclude(SituationType.HOW_WORSE, [how_worse['situation_id']])
+        how_worse3 = get_random_situation_exclude(SituationType.HOW_WORSE, [how_worse['situation_id'],
+                                                                            how_worse2['situation_id']])
+        do_assign_situation(game_id, how_worse2['situation_id'])
+        do_assign_situation(game_id, how_worse3['situation_id'])
+    else:
+        do_assign_situation(game_id, how_worse['situation_id'])

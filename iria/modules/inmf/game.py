@@ -3,8 +3,7 @@ import logging
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import CallbackQueryHandler, CommandHandler
 
-from .db import DB, GameRunningError, GameNotRunningError
-
+from .. import rpgdb
 
 logger = logging.getLogger(__package__)
 
@@ -21,7 +20,7 @@ def register(dp):
 
 def game(update, context):
     try:
-        running = DB().is_game_running(update.effective_chat.id)
+        running = rpgdb.is_game_running(update.effective_chat.id)
 
         if len(context.args) == 0:
             if running:
@@ -50,9 +49,9 @@ def game(update, context):
             response = game_end_(update.effective_chat.id, update.effective_user.id)
             update.message.reply_text(response)
 
-    except GameRunningError:
+    except rpgdb.GameRunningError:
         update.message.reply_text("Game is already running!")
-    except GameNotRunningError:
+    except rpgdb.GameNotRunningError:
         update.message.reply_text("Game is not running!")
 
 
@@ -65,7 +64,7 @@ def game_start(update, _context):
 
 
 def game_start_(chat_id, user_id, user_name):
-    DB().do_game_start(chat_id, user_id, user_name)
+    rpgdb.do_game_start(chat_id, user_id, user_name)
     return f"Game started by {user_name}!"
 
 
@@ -77,8 +76,8 @@ def game_end(update, _context):
 
 
 def game_end_(chat_id, user_id):
-    if DB().is_game_master(chat_id, user_id):
-        DB().do_game_end(chat_id)
+    if rpgdb.is_game_master(chat_id, user_id):
+        rpgdb.do_game_end(chat_id)
         return "Game ended. Well played!"
     else:
         return "You are not the master: you can't end the game!"
@@ -91,7 +90,7 @@ def game_info(update, _context):
 
 
 def game_info_(chat_id):
-    players = DB().get_game_players(chat_id)
+    players = rpgdb.get_game_players(chat_id)
     return 'The current game has the following players:\n' + \
            ''.join([
             f"{player.user_name} ({player.role})\n"

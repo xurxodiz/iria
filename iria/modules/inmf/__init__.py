@@ -1,1 +1,1 @@
-from .inmf import register
+from .game import register

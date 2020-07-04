@@ -24,21 +24,25 @@ ladder = {
     1  : 'Average',
     0  : 'Mediocre',
     -1 : 'Poor',
-    -2 : 'Terrible'
+    -2 : 'Terrible',
+    -3 : 'Catastrophic',
+    -4 : 'Horrifying'
 }
 
 ladder_rev = {
-    'legendary' : 8,
-    'epic'      : 7,
-    'fantastic' : 6,
-    'superb'    : 5,
-    'great'     : 4,
-    'good'      : 3,
-    'fair'      : 2,
-    'average'   : 1,
-    'mediocre'  : 0,
-    'poor'      : -1,
-    'terrible'  : -2
+    'legendary'    : 8,
+    'epic'         : 7,
+    'fantastic'    : 6,
+    'superb'       : 5,
+    'great'        : 4,
+    'good'         : 3,
+    'fair'         : 2,
+    'average'      : 1,
+    'mediocre'     : 0,
+    'poor'         : -1,
+    'terrible'     : -2,
+    'catastrophic' : -3,
+    'horrifying'   : -4
 }
 
 fate_options = {
