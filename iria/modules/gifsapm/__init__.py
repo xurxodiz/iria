@@ -1,1 +1,0 @@
-from .gifsapm import register

@@ -4,21 +4,8 @@ A chatbot for Telegram.
 What can it do?
 ===============
 
-It helps you play Fate Accelerated through Telegram (work in progress).
-
-* `/roll sequence` rolls dice. `sequence` takes the usual RPG pattern, i.e. `3d6+1d10+7`.
-This is basically a copy of the code from the great
-[Roll'em Bot](https://github.com/treetrnk/rollem-telegram-bot).
-Check the license in the link.
-* `/roll`, with no argument, rolls `4dF` by default (four Fate dice)
-
-It also has two Easter Eggs commands:
-
-* `/g tag` or `/gifsapm tag` posts a random APM gif taken
-from the [APM Gifs tumblr](http://gifsapm.tumblr.com)
-based on the tag passed.
-* `/e word` or `/estraviz word` searches for that word
-in the [Estraviz dictionary](http://estraviz.org).
+Tell you stories written in [ink](https://github.com/inkle/ink).
+Send `/start` and answer its prompts.
 
 
 Where to test it?
@@ -36,31 +23,35 @@ If you want stability, deploy your own version 😊
 How to deploy?
 ==============
 
-1. Clone the repo in a machine that has Docker.
-2. Register with [the BotFather](https://core.telegram.org/bots)
-so you get your own token. Place it into `data/secret/bot_token`.
-3. Run `docker-compose up -d` et voilà!
+1. Register with [the BotFather](https://core.telegram.org/bots) so you get your bot token.
+2. Clone this repo.
+3. Place the bot token into a new file `app/secrets/token.json`:
+```
+{"token": "YOUR-BOT-TOKEN-STRING"}
+```
+4. Run `make install` the first time to get dependencies.
+5. Replace `app/ink/game.ink` with your own story if you like, and then run `make json`.
+6. Run `make start` et voilà!
+    * To keep it running forever with `pm2`, you can use `make launch` instead.
 
 Iria is MIT licensed, so you can do pretty much whatever you want as long
 as you include the original copyright and license notice in any copy of the code.
 Experiment, have fun, and drop me a notice if you make something cool based on her.
 
-Note that for the APM gifs easter egg to work,
-you need a `data/secret/tumblr_token` containing the Tumblr tokens for
-- consumer key
-- consumer secret
-- access token
-- access secret
-
-in consecutive, different lines. (In its absence the plugin is just not loaded).
-
-
 
 Why the name?
 =============
 
-Way, way back it used to be an IRC bot (see that messy first commit).
-So IRIA stood for `IRC Intelixencia Artificial`, as well as being a nice Galician name.
-I then ported it to Jabber, before finally porting it to Telegram, but kept the name as I liked it.
+Iria has been so many things throughout the years! A Jabber bot, a Telegram bot…
+It has told jokes, made dictionary lookups, searched for gifs…
+it even organised RPG games at one point!
 
-It could now be backronymed into `"It's not my fault, Really!" IA`.
+Nowadays IRIA tell stories, and therefore it could be the acronym for `Iria Relata Intrincadas Aventuras`,
+but decades ago it was born as an IRC bot and stood for `IRC Intelixencia Artificial`,
+as well as being a nice Galician name—and it has kept it all along.
+
+
+Attribution
+===========
+
+Based on [ink-telegram](https://github.com/technix/ink-telegram) by Serhii "techniX" Mozhaiskyi, (c) 2019.
