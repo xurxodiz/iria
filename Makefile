@@ -8,4 +8,4 @@ start:
 	cd app; npm start
 
 launch:
-	cd app; pm2 start npm --name "iria" -- start
+	cd app; pm2 start app.js --name iria
