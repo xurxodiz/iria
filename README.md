@@ -46,7 +46,7 @@ Iria has been so many things throughout the years! A Jabber bot, a Telegram bot�
 It has told jokes, made dictionary lookups, searched for gifs…
 it even organised RPG games at one point!
 
-Nowadays IRIA tell stories, and therefore it could be the acronym for `Iria Relata Intrincadas Aventuras`,
+Nowadays Iria tells stories, and therefore it could be the acronym for `Iria Relata Intrincadas Aventuras`,
 but decades ago it was born as an IRC bot and stood for `IRC Intelixencia Artificial`,
 as well as being a nice Galician name—and it has kept it all along.
 
