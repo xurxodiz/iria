@@ -1,8 +1,10 @@
+GAME ?= default
+
 install:
 	cd app; npm install
 
 json:
-	cd app; node node_modules/inkjs/dist/inkjs-compiler.js -o ink/game.ink.json ink/game.ink
+	cd app; node node_modules/inkjs/bin/inkjs-compiler.js -o ink/game.ink.json ink/${GAME}.ink
 
 start:
 	cd app; npm start

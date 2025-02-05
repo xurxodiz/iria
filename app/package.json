@@ -9,7 +9,7 @@
   "author": "Jorge Diz Pico (@xurxodiz@mastodon.gal)",
   "license": "MIT",
   "dependencies": {
-    "inkjs": "2.2.0",
-    "node-telegram-bot-api": "^0.60.0"
+    "inkjs": "2.3.1",
+    "node-telegram-bot-api": "^0.66.0"
   }
 }

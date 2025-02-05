@@ -194,7 +194,8 @@ function setNoChoiceAsExpected(chatId) {
 function speakAsIria(chatId, text, extraOpts = {}) {
     const defaultOpts = { parse_mode: 'Markdown' };
     const finalOpts = {...defaultOpts, ...extraOpts};
-    const fmtText = '```\n' + (text || '…') + '\n```';
+    const spreadText = separateParagraphs(text);
+    const fmtText = '```\n' + (spreadText || '…') + '\n```';
     return bot.sendMessage(chatId, fmtText, finalOpts);
 }
 
@@ -220,7 +221,8 @@ function speakAsIriaAndClearButtons(chatId,  text) {
 function speakAsStory(chatId, text, extraOpts = {}) {
     const defaultOpts = { parse_mode: 'Markdown' };
     const finalOpts = {...defaultOpts, ...extraOpts};
-    return bot.sendMessage(chatId, text, finalOpts);
+    const spreadText = separateParagraphs(text);
+    return bot.sendMessage(chatId, spreadText, finalOpts);
 }
 
 function speakAsStoryWithChoices(chatId, text, choices) {
@@ -244,4 +246,8 @@ function retireChoicesForMessage(chatId, msgId) {
 
 function emphasizeText(txt) {
     return '*' + txt + '*';
+}
+
+function separateParagraphs(text) {
+    return text.replace('\n', '\n\n');
 }
